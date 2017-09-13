@@ -553,7 +553,128 @@ int Lepton3::enableRadiometry( bool enable )
     if( rad_status != new_status )
     {
         if( LEP_SetRadEnableState(&mCciConnPort, new_status ) != LEP_OK )
-            return -1;
+        {
+            cerr << "Cannot set Radiometry status" << endl;
+            return LEP_ERROR;
+        }
+    }
+
+    return LEP_OK;
+}
+
+LEP_RESULT Lepton3::getAgcStatus(bool &status)
+{
+    if(!mCciConnected)
+    {
+        if( !CciConnect() )
+            return LEP_ERROR;
+    }
+
+    LEP_AGC_ENABLE_E agc_status;
+
+    if( LEP_GetAgcEnableState( &mCciConnPort, (LEP_AGC_ENABLE_E_PTR)&agc_status ) != LEP_OK )
+    {
+        cerr << "Cannot read AGC status" << endl;
+        return LEP_ERROR;
+    }
+
+    if( agc_status == LEP_AGC_ENABLE )
+        status = true;
+    else
+        status = false;
+
+    return LEP_OK;
+}
+
+LEP_RESULT Lepton3::enableAgc( bool enable )
+{
+    if(!mCciConnected)
+    {
+        if( !CciConnect() )
+            return LEP_ERROR;
+    }
+
+    LEP_AGC_ENABLE_E agc_status;
+
+    if( LEP_GetAgcEnableState(&mCciConnPort, (LEP_AGC_ENABLE_E_PTR)&agc_status ) != LEP_OK )
+    {
+        cerr << "Cannot read AGC status" << endl;
+        return LEP_ERROR;
+    }
+
+    LEP_AGC_ENABLE_E new_status = enable?LEP_AGC_ENABLE:LEP_AGC_DISABLE;
+
+    if( agc_status != new_status )
+    {
+        if( LEP_SetAgcEnableState(&mCciConnPort, new_status ) != LEP_OK )
+        {
+            cerr << "Cannot set Radiometry status" << endl;
+            return LEP_ERROR;
+        }
+    }
+
+    return LEP_OK;
+}
+
+LEP_RESULT Lepton3::getGainMode( LEP_SYS_GAIN_MODE_E& mode)
+{
+    if(!mCciConnected)
+    {
+        if( !CciConnect() )
+            return LEP_ERROR;
+    }
+
+    if( LEP_GetSysGainMode( &mCciConnPort, (LEP_SYS_GAIN_MODE_E_PTR)&mode ) != LEP_OK )
+    {
+        cerr << "Cannot read Sys Gain Mode" << endl;
+        return LEP_ERROR;
+    }
+
+    return LEP_OK;
+}
+
+LEP_RESULT Lepton3::getSpotROI( uint16_t& x, uint16_t& y, uint16_t& w, uint16_t& h )
+{
+    if(!mCciConnected)
+    {
+        if( !CciConnect() )
+            return LEP_ERROR;
+    }
+
+    LEP_RAD_ROI_T roi;
+
+    if( LEP_GetRadSpotmeterRoi( &mCciConnPort, (LEP_RAD_ROI_T_PTR)&roi ) != LEP_OK )
+    {
+        cerr << "Cannot read Spotmeter ROI" << endl;
+        return LEP_ERROR;
+    }
+
+    x = roi.startCol;
+    y = roi.startRow;
+    w = roi.endCol - x;
+    h = roi.endRow - y;
+
+    return LEP_OK;
+}
+
+LEP_RESULT Lepton3::setSpotROI( uint16_t x, uint16_t y, uint16_t w, uint16_t h )
+{
+    if(!mCciConnected)
+    {
+        if( !CciConnect() )
+            return LEP_ERROR;
+    }
+
+    LEP_RAD_ROI_T newROI;
+    newROI.startCol = x;
+    newROI.startRow = y;
+    newROI.endCol = x+w;
+    newROI.endRow = y+h;
+
+    if( LEP_SetRadSpotmeterRoi( &mCciConnPort, newROI ) != LEP_OK )
+    {
+        cerr << "Cannot set Spotmeter ROI" << endl;
+        return LEP_ERROR;
     }
 
     return new_status;

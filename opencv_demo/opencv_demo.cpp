@@ -240,12 +240,18 @@ int main (int argc, char *argv[])
 		cout << " * Radiometry enabled " << endl;
 	}
 
+	LEP_SYS_GAIN_MODE_E gainMode;
+	if( lepton3.getGainMode( gainMode ) == LEP_OK )
+	{
+		cout << " * Gain mode: " << gainMode << endl;
+		//(gainMode==LEP_SYS_GAIN_MODE_HIGH)?"High":((gainMode==LEP_SYS_GAIN_MODE_LOW)?"Low":"Auto") << endl;
+	}
+    
 	lepton3.start();
 
 	uint64_t frameIdx=0;	
 
 	StopWatch stpWtc;
-
 	stpWtc.tic();
 	
 #ifndef WRITE_JPEG		
