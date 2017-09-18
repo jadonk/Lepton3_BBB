@@ -37,6 +37,8 @@ uint16_t *fbp = 0;
 
 #define RGB565(r, g, b) ((((r)&0xf8)<<8) | (((g)&0xfc)<<3) | ((b)>>3))
 
+#define VAL_OFFSET 7550
+#define VAL_SHIFT  2
 uint16_t iron_palette[128] = {
 	RGB565(0, 0, 0 ),
 	RGB565(0, 0, 36 ),
@@ -229,7 +231,7 @@ int main (int argc, char *argv[])
 	bool writeFrame = writer.isOpened();
 #endif
 	
-	Lepton3 lepton3( "/dev/spidev2.1", 1, deb_lvl );
+	Lepton3 lepton3( "/dev/spidev1.0", 1, deb_lvl );
 
 /*
 	if( lepton3.enableRadiometry( true ) < 0)
@@ -278,6 +280,16 @@ int main (int argc, char *argv[])
 		printf("Failed to mmap.\n");
 	}
 
+	for(int i = 0; i < 120; i++) {
+		for(int j = 0; j < 160; j++) {
+			uint16_t val = 0;
+			fbp[(i*2)*320+j*2] = val;
+			fbp[(i*2)*320+j*2+1] = val;
+			fbp[(i*2+1)*320+j*2] = val;
+			fbp[(i*2+1)*320+j*2+1] = val;
+		}
+	}
+
 	//memset(screensize, 0, fbp);
 #endif
 
@@ -289,6 +301,9 @@ int main (int argc, char *argv[])
 			
 		if( data )
 		{
+	        	float fdiff = (float)(max - min);
+			float fscale = 128./fdiff;
+			//printf("%d %d %f %f\n", min, max, fdiff, fscale);
 #if 0
 			double period_usec = stpWtc.toc();
 			stpWtc.tic();
@@ -327,24 +342,35 @@ int main (int argc, char *argv[])
 				cout << "> " << imgStr << endl;
 			}
 #else
+
+#if 0
+#define OUT_WIDTH 320
+#define OUT_OFFSET 0
+#else
+#define OUT_WIDTH 240
+#define OUT_OFFSET 20
+#endif
+
 			assert(h == 120);
 			assert(w == 160);
-			for(int i = 0; i < 118; i++) {
-				for(int j = 0; j < 158; j++) {
-					uint16_t val = iron_palette[data[i*160+j]>>17];
+			for(int i = 0; i < 120; i++) {
+				for(int j = 20; j < 140; j++) {
+					float fval = (float)(data[i*160+j] - min);
+					fval *= fscale;
+					uint16_t val = iron_palette[((uint8_t)fval)&0x7f];
 					switch(frameIdx%4) {
 						default:
 						case 0:
-							fbp[(i*2)*320+j*2] = val;
+							fbp[(i*2)*OUT_WIDTH+(j-OUT_OFFSET)*2] = val;
 							break;
 						case 1:
-							fbp[(i*2)*320+j*2+1] = val;
+							fbp[(i*2)*OUT_WIDTH+(j-OUT_OFFSET)*2+1] = val;
 							break;
 						case 2:
-							fbp[(i*2+1)*320+j*2] = val;
+							fbp[(i*2+1)*OUT_WIDTH+(j-OUT_OFFSET)*2] = val;
 							break;
 						case 3:
-							fbp[(i*2+1)*320+j*2+1] = val;
+							fbp[(i*2+1)*OUT_WIDTH+(j-OUT_OFFSET)*2+1] = val;
 							break;
 					}
 				}
