@@ -491,7 +491,7 @@ float Lepton3::getSensorTemperatureK()
     if(!mCciConnected)
     {
         if( !CciConnect() )
-            return KELVIN;
+            return false;
     }
 
     LEP_SYS_FPA_TEMPERATURE_KELVIN_T temp;

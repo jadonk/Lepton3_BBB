@@ -232,6 +232,14 @@ int main (int argc, char *argv[])
 #endif
 	
 	Lepton3 lepton3( "/dev/spidev1.0", 1, deb_lvl );
+	
+	float sensorTemp = lepton3.getSensorTemperatureK();
+	if(!sensorTemp)
+	{
+		printf("Failed to initialize module\n");
+		exit(-1);
+	}
+	printf("Sensor temperature: %f\n", sensorTemp);
 
 /*
 	if( lepton3.enableRadiometry( true ) < 0)
@@ -384,12 +392,12 @@ int main (int argc, char *argv[])
 				cout << "> Frame period: " << period_usec <<  " usec - FPS: " << freq << endl;
 			}
 #endif
-
-			frameIdx++;
-			frameIdx = frameIdx % 1000000;
-
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
+
+		frameIdx++;
+		frameIdx = frameIdx % 1000000;
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
 	
 	lepton3.stop();
