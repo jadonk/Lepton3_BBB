@@ -536,6 +536,7 @@ bool Lepton3::lepton_perform_ffc()
     }
 }
 
+/*
 int Lepton3::enableRadiometry( bool enable )
 {
     if(!mCciConnected)
@@ -558,6 +559,7 @@ int Lepton3::enableRadiometry( bool enable )
 
     return new_status;
 }
+*/
 
 void Lepton3::raw2data()
 {

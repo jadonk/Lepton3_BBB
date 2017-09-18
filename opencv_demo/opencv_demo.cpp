@@ -230,7 +230,8 @@ int main (int argc, char *argv[])
 #endif
 	
 	Lepton3 lepton3( "/dev/spidev2.1", 1, deb_lvl );
-    
+
+/*
 	if( lepton3.enableRadiometry( true ) < 0)
 	{
 		cout << "Failed to enable radiometry" << endl;
@@ -240,14 +241,13 @@ int main (int argc, char *argv[])
 		cout << " * Radiometry enabled " << endl;
 	}
 
-	/*
 	LEP_SYS_GAIN_MODE_E gainMode;
 	if( lepton3.getGainMode( gainMode ) == LEP_OK )
 	{
 		cout << " * Gain mode: " << gainMode << endl;
 		//(gainMode==LEP_SYS_GAIN_MODE_HIGH)?"High":((gainMode==LEP_SYS_GAIN_MODE_LOW)?"Low":"Auto") << endl;
 	}
-	*/
+*/
     
 	lepton3.start();
 
