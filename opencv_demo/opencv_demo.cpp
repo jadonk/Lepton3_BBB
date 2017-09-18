@@ -185,7 +185,7 @@ int main (int argc, char *argv[])
 {
 	uint8_t w=160;
 	uint8_t h=120;
-	cout << "OpenCV demo for Lepton3 on BeagleBoard Blue" << endl;
+	cout << "IR demo" << endl;
 	
 	// >>>>> Enable Ctrl+C
 	struct sigaction sigIntHandler;
@@ -280,6 +280,7 @@ int main (int argc, char *argv[])
 		printf("Failed to mmap.\n");
 	}
 
+/*
 	for(int i = 0; i < 120; i++) {
 		for(int j = 0; j < 160; j++) {
 			uint16_t val = 0;
@@ -289,6 +290,7 @@ int main (int argc, char *argv[])
 			fbp[(i*2+1)*320+j*2+1] = val;
 		}
 	}
+*/
 
 	//memset(screensize, 0, fbp);
 #endif
