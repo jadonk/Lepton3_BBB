@@ -8,6 +8,8 @@ set(CMAKE_DEBUG_POSTFIX "_d")
 #########################################################
 # FLAGS
 set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 #########################################################
 
 # Library source code

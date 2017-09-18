@@ -5,6 +5,7 @@
 #include <chrono>
 #include <thread>
 #ifndef WRITE_JPEG
+#include <assert.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/types.h>
@@ -15,13 +16,15 @@
 #endif
 #include "Lepton3.hpp"
 
+#if defined(WRITE_JPEG) || defined(SAVE_MJPEG)
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#endif
 
 #include "stopwatch.hpp"
 
-#define SAVE_MJPEG 1 // Comment to save frames to PNG images
+/* #define SAVE_MJPEG 1 // Comment to save frames to PNG images */
 
 using namespace std;
 
@@ -255,7 +258,7 @@ int main (int argc, char *argv[])
 
 	// map fb to user mem 
 	screensize = finfo.smem_len;
-	assert(screensize = 320*240*2);
+	assert(screensize == 320*240*2);
 	fbp = (uint16_t *)mmap(0, 
 		screensize, 
 		PROT_READ | PROT_WRITE, 
@@ -339,11 +342,12 @@ int main (int argc, char *argv[])
 				}
 			}
 #endif
-			
+#if 0
 			if( deb_lvl>=Lepton3::DBG_INFO  )
 			{
 				cout << "> Frame period: " << period_usec <<  " usec - FPS: " << freq << endl;
 			}
+#endif
 
 			frameIdx++;
 			frameIdx = frameIdx % 1000000;
