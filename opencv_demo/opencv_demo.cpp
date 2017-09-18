@@ -16,10 +16,12 @@
 #include "Lepton3.hpp"
 
 #include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#ifndef WRITE_JPEG
 #include <opencv2/imgproc/imgproc.hpp>
-#endif
+#include <opencv2/highgui/highgui.hpp>
+
+#include "stopwatch.hpp"
+
+#define SAVE_MJPEG 1 // Comment to save frames to PNG images
 
 using namespace std;
 
@@ -176,24 +178,72 @@ void exit_handler(int s)
 
 int main (int argc, char *argv[])
 {
+	uint8_t w=160;
+	uint8_t h=120;
 	cout << "OpenCV demo for Lepton3 on BeagleBoard Blue" << endl;
 	
 	// >>>>> Enable Ctrl+C
 	struct sigaction sigIntHandler;
 
-    sigIntHandler.sa_handler = exit_handler;
-    sigemptyset(&sigIntHandler.sa_mask);
-    sigIntHandler.sa_flags = 0;
+	sigIntHandler.sa_handler = exit_handler;
+	sigemptyset(&sigIntHandler.sa_mask);
+	sigIntHandler.sa_flags = 0;
 
-    sigaction(SIGINT, &sigIntHandler, NULL);
-    // <<<<< Enable Ctrl+C
+	sigaction(SIGINT, &sigIntHandler, NULL);
+	// <<<<< Enable Ctrl+C
 	
-	Lepton3 lepton3;
+	Lepton3::DebugLvl deb_lvl = Lepton3::DBG_NONE;
 	
-	lepton3.start();
+	if( argc == 2 )
+	{
+	    int dbg = atoi(argv[1]);
+	    
+	    switch( dbg )
+	    {
+	    case 1:
+	        deb_lvl = Lepton3::DBG_INFO;
+	        break;
+	        
+	    case 2:
+	        deb_lvl = Lepton3::DBG_FULL;
+	        break;
+	        
+	    default:
+	    case 0:
+	        deb_lvl = Lepton3::DBG_NONE;
+	        break;	    
+	    }
+	}
 	
-	uint64_t frameIdx=0;
 	char image_name[32];
+
+#ifdef SAVE_MJPEG 
+	cv::VideoWriter writer;
+	int fps=9;
+    
+	writer.open( "lepton3.avi", CV_FOURCC('M','J','P','G'), fps, cv::Size(w,h) );
+    
+	bool writeFrame = writer.isOpened();
+#endif
+	
+	Lepton3 lepton3( "/dev/spidev2.1", 1, deb_lvl );
+    
+	if( lepton3.enableRadiometry( true ) < 0)
+	{
+		cout << "Failed to enable radiometry" << endl;
+	}
+	else
+	{
+		cout << " * Radiometry enabled " << endl;
+	}
+
+	lepton3.start();
+
+	uint64_t frameIdx=0;	
+
+	StopWatch stpWtc;
+
+	stpWtc.tic();
 	
 #ifndef WRITE_JPEG		
 	fbfd = open("/dev/fb0", O_RDWR);
@@ -222,29 +272,55 @@ int main (int argc, char *argv[])
 
 	while(!do_exit)
 	{
-		int w;
-		int h;
-		
-		/*const char* data = grabber.getLastFrame( &w, &h );
+        	uint16_t min;
+        	uint16_t max;	
+        	const uint16_t* data = lepton3.getLastFrame( w, h, &min, &max );
 			
-		if( data && w!=-1 && h!=-1 )
+		if( data )
 		{
-#ifdef WRITE_JPEG		
-			sprintf(image_name, "IMG_%.6d.jpg", frameIdx);
+#if 0
+			double period_usec = stpWtc.toc();
+			stpWtc.tic();
+
+			double freq = (1000.*1000.)/period_usec; 
+			cv::Mat frame16( h, w, CV_16UC1 );
+
+			memcpy( frame16.data, data, w*h*sizeof(uint16_t) );
+
+			// >>>>> Rescaling/Normalization to 8bit
+			double diff = static_cast<double>(max - min); // Image range
+			double scale = 255./diff; // Scale factor
+
+			frame16 -= min; // Bias
+			frame16 *= scale; // Rescale data
+
+			cv::Mat frame8;
+			frame16.convertTo( frame8, CV_8UC1 ); 
+			// <<<<< Rescaling/Normalization to 8bit
+#endif
+			
+			
+#ifdef SAVE_MJPEG
+			if(writeFrame)
+			{
+				cv::cvtColor(frame8,frame8, CV_GRAY2RGB ); // MPEG needs RGB frames
+				writer.write(frame8);
+			}
+#elif defined WRITE_JPEG
+			sprintf(image_name, "IMG_%.6lu.png", frameIdx);
 			string imgStr = image_name;
-			
-			cv::Mat frame( h,w, CV_8UC1 );
-			memcpy( frame.data, data, w*h );
-			
-			cv::imwrite( image_name, frame );
-			
-			cout << "Saved: " << image_name << "[" << w << "x" << h << "]" << endl;
+			cv::imwrite( imgStr, frame8 );       
+               
+			if( deb_lvl>=Lepton3::DBG_INFO  )
+			{
+				cout << "> " << imgStr << endl;
+			}
 #else
 			assert(h == 120);
 			assert(w == 160);
 			for(int i = 0; i < 118; i++) {
 				for(int j = 0; j < 158; j++) {
-					uint16_t val = iron_palette[data[i*160+j]>>1];
+					uint16_t val = iron_palette[data[i*160+j]>>17];
 					switch(frameIdx%4) {
 						default:
 						case 0:
@@ -264,16 +340,24 @@ int main (int argc, char *argv[])
 			}
 #endif
 			
+			if( deb_lvl>=Lepton3::DBG_INFO  )
+			{
+				cout << "> Frame period: " << period_usec <<  " usec - FPS: " << freq << endl;
+			}
+
 			frameIdx++;
 			frameIdx = frameIdx % 1000000;
-		}*/
-		
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	}
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}
+        }
 	
 	lepton3.stop();
-
-#ifndef WRITE_JPEG
+	
+#ifdef SAVE_MJPEG
+	writer.release();
+#elif defined WRITE_JPEG
+#else
 	munmap(fbp, screensize);
 	close(fbfd);
 #endif
