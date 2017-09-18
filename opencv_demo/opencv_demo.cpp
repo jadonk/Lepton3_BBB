@@ -266,13 +266,17 @@ int main (int argc, char *argv[])
 	StopWatch stpWtc;
 	stpWtc.tic();
 	
-#ifndef WRITE_JPEG		
+#ifndef WRITE_JPEG
 	fbfd = open("/dev/fb0", O_RDWR);
 
 	if (ioctl(fbfd, FBIOGET_FSCREENINFO, &finfo)) {
 		printf("Error reading screen information.\n");
 		exit(-1);
 	}
+
+	system("systemctl stop getty@tty1");
+	system("echo -e '\033[?17;0;0c' > /dev/tty1");
+	system("xzcat /var/lib/cloud9/Lepton3_BBB/opencv_demo/irdemo_PocketBeagleLogo.raw.xz > /dev/fb0");
 
 	// map fb to user mem 
 	screensize = finfo.smem_len;
@@ -392,10 +396,10 @@ int main (int argc, char *argv[])
 				cout << "> Frame period: " << period_usec <<  " usec - FPS: " << freq << endl;
 			}
 #endif
-		}
 
-		frameIdx++;
-		frameIdx = frameIdx % 1000000;
+			frameIdx++;
+			frameIdx = frameIdx % 1000000;
+		}
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
