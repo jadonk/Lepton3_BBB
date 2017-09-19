@@ -1,0 +1,25 @@
+
+/dts-v1/;
+
+#include "am335x-pocketbeagle-common.dtsi"
+#include "am335x-peripheral-spi0.dtsi"
+
+&spi1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	adafruit28: adafruit28@1{
+		compatible = "ilitek,ili9341";
+		reg = <1>;
+		buswidth = <8>;
+		reset-gpios = <&gpio2 22 0>;
+		dc-gpios = <&gpio1 13 0>;
+		debug = <1>;
+		spi-max-frequency = <32000000>;
+		rotate = <180>;
+		bgr;
+		fps = <30>;				
+	};
+};
+

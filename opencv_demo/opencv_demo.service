@@ -1,0 +1,12 @@
+[Unit]
+Description=IR demo
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=10
+ExecStart=/var/lib/cloud9/Lepton3_BBB/opencv_demo/opencv_demo
+Nice=-10
+
+[Install]
+WantedBy=multi-user.target
